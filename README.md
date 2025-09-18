@@ -1,4 +1,83 @@
-# 📊 Call Center Performance Report 
+
+# 📊 Call Center Performance Analysis  
+
+## 🧹 Data Cleaning (Power Query)
+
+Applied steps in Power Query for cleaning the dataset:
+
+1. **Source** → Loaded the dataset `01 Call-Center-Dataset`.  
+2. **Removed Duplicates** → Eliminated duplicate records to ensure accuracy.  
+3. **Changed Data Types** → Adjusted data types for each column (e.g., numbers, dates, text).  
+4. **Renamed Columns** → For clarity, e.g.:  
+   - `avgtalkduration` → `Talking Duration`.  
+5. **Calculated Start of Hour** → Extracted hour from datetime for time-based analysis.  
+6. **Inserted Day Name** → Added a column for the day of the week.  
+7. **Inserted Day of Week** → Added numeric representation of weekdays.  
+
+---
+
+## 📌 DAX Measures
+
+```DAX
+-- Average Satisfaction Rate
+Avg Satisfaction Rate = 
+AVERAGE('01 Call-Center-Dataset'[satisfaction rating])
+
+-- Average Speed of Answer (ASA)
+Avg Speed of call answer = 
+AVERAGE('01 Call-Center-Dataset'[speed of answer in seconds])
+
+-- Average Talking Duration (exclude zero durations)
+Avg Talking Duration = 
+AVERAGEX(
+    FILTER(
+        '01 Call-Center-Dataset',
+        '01 Call-Center-Dataset'[talking duration] > 0
+    ),
+    '01 Call-Center-Dataset'[talking duration]
+)
+
+-- Call Abandoned %
+Call Abandoned % = 
+VAR abondand =
+    CALCULATE(
+        COUNTA('01 Call-Center-Dataset'[call id]),
+        '01 Call-Center-Dataset'[answered (Y/N)] = "n"
+    )
+RETURN
+    DIVIDE(abondand, [Total Calls], 0)
+
+-- Call Resolved %
+Call Resolved % = 
+VAR resolvedcalls =
+    CALCULATE(
+        COUNTA('01 Call-Center-Dataset'[call id]),
+        '01 Call-Center-Dataset'[resolved] = "y"
+    )
+VAR calls = 
+    CALCULATE(
+        COUNT('01 Call-Center-Dataset'[call id]),
+        '01 Call-Center-Dataset'[answered (Y/N)] = "Y"
+    )
+RETURN
+    DIVIDE(resolvedcalls, calls, 0)
+
+-- Total Calls
+Total Calls = 
+DISTINCTCOUNT('01 Call-Center-Dataset'[call id])
+
+-- Satisfaction Levels Classification
+satistfaction levels = 
+SWITCH(
+    TRUE(),
+    ISBLANK('01 Call-Center-Dataset'[satisfaction rating]), "Not Served",
+    '01 Call-Center-Dataset'[satisfaction rating] = 1, "Not Satisfied",
+    '01 Call-Center-Dataset'[satisfaction rating] = 2, "Not Satisfied",
+    '01 Call-Center-Dataset'[satisfaction rating] = 3, "Normal",
+    '01 Call-Center-Dataset'[satisfaction rating] = 4, "Satisfied",
+    '01 Call-Center-Dataset'[satisfaction rating] = 5, "Very Satisfied"
+)
+
 
 ## 📌 Key Performance Indicators (KPIs)  
 
